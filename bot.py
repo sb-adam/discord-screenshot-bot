@@ -1,3 +1,4 @@
+import os
 import discord
 import asyncio
 from selenium import webdriver
@@ -5,8 +6,11 @@ from PIL import Image
 from io import BytesIO
 import re
 
-token = '1234'
+token = 'token'
 command = '!ss'
+
+eti_username = 'username'
+eti_password = 'password'
 
 MAX_SIZE = 1024 * 8000 # 8MB
 
@@ -21,6 +25,16 @@ def configure_browser():
     driver.set_window_position(0, 0)
     driver.set_window_size(1024, 768)
     return driver
+
+def login_eti(driver):
+    print('logging into eti')
+    username = driver.find_element_by_name("b")
+    password = driver.find_element_by_name("p")
+
+    username.send_keys(eti_username)
+    password.send_keys(eti_password)
+
+    driver.find_element_by_class_name("submit").click()
 
 def fullpage(driver):
     
