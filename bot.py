@@ -1,17 +1,18 @@
 import os
 import discord
 import asyncio
+import string
+import random
 from selenium import webdriver
 from PIL import Image
 from io import BytesIO
 from time import sleep
-import re
 
 token = 'token'
 command = '!ss'
 
 eti_username = 'username'
-eti_password = 'password'
+eti_password = 'pass'
 
 MAX_SIZE = 1024 * 8000  # 8MB
 
@@ -122,35 +123,51 @@ async def on_message(message):
             print('sleeping')
             sleep(1)
 
-            filename = 'ss.png'
+            ext = 'png'
+            filename = ''.join(
+                random.choice(
+                    string.ascii_uppercase + string.digits) for _ in range(10))
+            full_filename = '{}.{}'.format(filename, ext)
+
             print('getting screenshot')
             if '--full' in message.content:
                 tmp = await client.edit_message(
                     tmp,
                     'Screenshotting <{}>... fullpage screenshots can take a '
                     'while'.format(site))
+
                 print('fullpage')
                 screenshot = fullpage(driver)
-                screenshot.save(filename)
-                im = Image.open(filename)
+
+                # really need to find a better way to do all this.
+                screenshot.save(full_filename)
+                im = Image.open(full_filename)
                 rgb_im = im.convert('RGB')
-                rgb_im.save('ss.jpg')
-                filename = 'ss.jpg'
+                os.remove(full_filename)
+                ext = 'jpg'
+                full_filename = '{}.{}'.format(filename, ext)
+                rgb_im.save(full_filename)
             else:
-                screenshot = driver.save_screenshot(filename)
+                screenshot = driver.save_screenshot(
+                    full_filename)
 
-            filesize = os.stat(filename).st_size
-            if filesize > MAX_SIZE:
-                print('file size too large: {}'.format(filesize))
-                raise Exception('file size too large')
-
-            print('closing browser')
-            driver.quit()
+            # filesize = os.stat(full_filename).st_size
+            # if filesize > MAX_SIZE:
+            #     print('file size too large: {}'.format(filesize))
+            #     raise Exception('file size too large')
 
             await client.edit_message(
                 tmp, 'Screenshot for <{}> grabbed!'.format(site))
-            await client.send_file(message.channel, filename)
+            await client.send_file(message.channel, full_filename)
+
+            print ('removing file')
+            os.remove(full_filename)
+
+            print('closing browser')
+            driver.quit()
         except:
+            print ('removing file')
+            os.remove(full_filename)
             await client.edit_message(
                 tmp,
                 'Failed! Could be a timeout, file too large or site is down')
