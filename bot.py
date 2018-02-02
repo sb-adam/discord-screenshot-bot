@@ -8,9 +8,6 @@ import re
 token = '1234'
 command = '!ss'
 
-eti_username = 'username'
-eti_password = 'password'
-
 client = discord.Client()
 
 def configure_browser():
