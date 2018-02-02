@@ -8,6 +8,8 @@ import re
 token = '1234'
 command = '!ss'
 
+MAX_SIZE = 1024 * 8000 # 8MB
+
 client = discord.Client()
 
 def configure_browser():
