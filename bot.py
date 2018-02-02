@@ -4,6 +4,7 @@ import asyncio
 from selenium import webdriver
 from PIL import Image
 from io import BytesIO
+from time import sleep
 import re
 
 token = 'token'
@@ -12,9 +13,10 @@ command = '!ss'
 eti_username = 'username'
 eti_password = 'password'
 
-MAX_SIZE = 1024 * 8000 # 8MB
+MAX_SIZE = 1024 * 8000  # 8MB
 
 client = discord.Client()
+
 
 def configure_browser():
     print('starting chrome')
@@ -26,6 +28,7 @@ def configure_browser():
     driver.set_window_size(1024, 768)
     return driver
 
+
 def login_eti(driver):
     print('logging into eti')
     username = driver.find_element_by_name("b")
@@ -36,22 +39,28 @@ def login_eti(driver):
 
     driver.find_element_by_class_name("submit").click()
 
+
 def fullpage(driver):
-    
+
     verbose = 1
 
-    # from here http://stackoverflow.com/questions/1145850/how-to-get-height-of-entire-document-with-javascript
+    """
+    from here
+    http://stackoverflow.com/questions/1145850/
+    how-to-get-height-of-entire-document-with-javascript
+    """
+
     js = 'return Math.max( document.body.scrollHeight, document.body.offsetHeight,  document.documentElement.clientHeight,  document.documentElement.scrollHeight,  document.documentElement.offsetHeight);'
 
     scrollheight = driver.execute_script(js)
 
-    if verbose > 0: 
+    if verbose > 0:
         print(scrollheight)
 
     slices = []
     offset = 0
     while offset < scrollheight:
-        if verbose > 0: 
+        if verbose > 0:
             print(offset)
 
         driver.execute_script("window.scrollTo(0, %s);" % offset)
@@ -64,9 +73,9 @@ def fullpage(driver):
             raise Exception('too fucking large!')
 
         if verbose > 0:
-            driver.get_screenshot_as_file('%s/screen_%s.png' % ('/tmp', offset))
+            driver.get_screenshot_as_file(
+                '%s/screen_%s.png' % ('/tmp', offset))
             print(scrollheight)
-
 
     screenshot = Image.new('RGB', (slices[0].size[0], scrollheight))
     offset = 0
@@ -77,6 +86,7 @@ def fullpage(driver):
 
     return screenshot
 
+
 @client.event
 async def on_ready():
     print('Logged in as')
@@ -84,12 +94,13 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
+
 @client.event
 async def on_message(message):
     if message.content.startswith(command):
-        site = message.content[len(command)+1:]
+        site = message.content[len(command) + 1:]
         if '--full' in message.content:
-            site = message.content[len(command)+8:]
+            site = message.content[len(command) + 8:]
 
         if 'http' not in site:
             site = 'http://{}'.format(site)
@@ -102,12 +113,22 @@ async def on_message(message):
         driver = configure_browser()
         try:
             driver.get(site)
+            print('site loaded')
+
+            if 'endoftheinter.net' in site:
+                print ('site is eti')
+                login_eti(driver)
+
+            print('sleeping')
+            sleep(1)
 
             filename = 'ss.png'
             print('getting screenshot')
             if '--full' in message.content:
                 tmp = await client.edit_message(
-                    tmp, 'Screenshotting <{}>... fullpage screenshots can take a while'.format(site))
+                    tmp,
+                    'Screenshotting <{}>... fullpage screenshots can take a '
+                    'while'.format(site))
                 print('fullpage')
                 screenshot = fullpage(driver)
                 screenshot.save(filename)
@@ -126,11 +147,13 @@ async def on_message(message):
             print('closing browser')
             driver.quit()
 
-            await client.edit_message(tmp, 'Screenshot for <{}> grabbed!'.format(site))
+            await client.edit_message(
+                tmp, 'Screenshot for <{}> grabbed!'.format(site))
             await client.send_file(message.channel, filename)
         except:
             await client.edit_message(
-                tmp, 'Failed! Could be a timeout, file too large or site is down')
+                tmp,
+                'Failed! Could be a timeout, file too large or site is down')
 
 
 client.run(token)
