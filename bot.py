@@ -21,6 +21,7 @@ def configure_browser():
     return driver
 
 def fullpage(driver):
+    
     verbose = 1
 
     # from here http://stackoverflow.com/questions/1145850/how-to-get-height-of-entire-document-with-javascript
@@ -42,6 +43,10 @@ def fullpage(driver):
         offset += img.size[1]
         slices.append(img)
 
+        if len(slices) > 50:
+            print('too fucking large!')
+            raise Exception('too fucking large!')
+
         if verbose > 0:
             driver.get_screenshot_as_file('%s/screen_%s.png' % ('/tmp', offset))
             print(scrollheight)
@@ -49,6 +54,7 @@ def fullpage(driver):
 
     screenshot = Image.new('RGB', (slices[0].size[0], scrollheight))
     offset = 0
+    print(len(slices))
     for img in slices:
         screenshot.paste(img, (0, offset))
         offset += img.size[1]
@@ -74,25 +80,41 @@ async def on_message(message):
 
         print('site is {}'.format(site))
 
-        tmp = await client.send_message(message.channel, 'Screenshotting <{}>...'.format(site))
+        tmp = await client.send_message(
+            message.channel, 'Screenshotting <{}>...'.format(site))
 
         driver = configure_browser()
-        driver.get(site)
+        try:
+            driver.get(site)
 
-        print('getting screenshot')
-        if '--full' in message.content:
-            tmp = await client.edit_message(
-                tmp, 'Screenshotting <{}>... fullpage screenshots can take a while'.format(site))
-            print('fullpage')
-            screenshot = fullpage(driver)
-            screenshot.save('ss.png')
-        else:
-            screenshot = driver.save_screenshot('ss.png')
+            filename = 'ss.png'
+            print('getting screenshot')
+            if '--full' in message.content:
+                tmp = await client.edit_message(
+                    tmp, 'Screenshotting <{}>... fullpage screenshots can take a while'.format(site))
+                print('fullpage')
+                screenshot = fullpage(driver)
+                screenshot.save(filename)
+                im = Image.open(filename)
+                rgb_im = im.convert('RGB')
+                rgb_im.save('ss.jpg')
+                filename = 'ss.jpg'
+            else:
+                screenshot = driver.save_screenshot(filename)
 
-        print('closing browser')
-        driver.quit()
+            filesize = os.stat(filename).st_size
+            if filesize > MAX_SIZE:
+                print('file size too large: {}'.format(filesize))
+                raise Exception('file size too large')
 
-        await client.edit_message(tmp, 'Screenshot for <{}> grabbed!'.format(site))
-        await client.send_file(message.channel, 'ss.png')
+            print('closing browser')
+            driver.quit()
+
+            await client.edit_message(tmp, 'Screenshot for <{}> grabbed!'.format(site))
+            await client.send_file(message.channel, filename)
+        except:
+            await client.edit_message(
+                tmp, 'Failed! Could be a timeout, file too large or site is down')
+
 
 client.run(token)
