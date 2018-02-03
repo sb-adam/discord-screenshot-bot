@@ -7,31 +7,40 @@ from selenium import webdriver
 from PIL import Image
 from io import BytesIO
 from time import sleep
+from copy import deepcopy
 
-token = 'token'
+
+token = '1234'
 command = '!ss'
 
-eti_username = 'username'
-eti_password = 'pass'
+eti_username = 'u'
+eti_password = 'p'
 
 MAX_SIZE = 1024 * 8000  # 8MB
 
 client = discord.Client()
 
 
-def configure_browser():
-    print('starting chrome')
+default_options = {
+    '-f': False,
+    '-w': 1024,
+    '-h': 768,
+}
+
+
+def configure_browser(options):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('headless')
     chrome_options.add_argument('no-sandbox')
     driver = webdriver.Chrome(chrome_options=chrome_options)
     driver.set_window_position(0, 0)
-    driver.set_window_size(1024, 768)
+    driver.set_window_size(options['-w'], options['-h'])
     return driver
 
 
-def login_eti(driver):
+def login_eti(driver, site):
     print('logging into eti')
+    driver.get('http://endoftheinter.net')
     username = driver.find_element_by_name("b")
     password = driver.find_element_by_name("p")
 
@@ -39,11 +48,10 @@ def login_eti(driver):
     password.send_keys(eti_password)
 
     driver.find_element_by_class_name("submit").click()
+    driver.get(site)
 
 
 def fullpage(driver):
-
-    verbose = 1
 
     """
     from here
@@ -55,37 +63,32 @@ def fullpage(driver):
 
     scrollheight = driver.execute_script(js)
 
-    if verbose > 0:
-        print(scrollheight)
-
     slices = []
     offset = 0
     while offset < scrollheight:
-        if verbose > 0:
-            print(offset)
 
         driver.execute_script("window.scrollTo(0, %s);" % offset)
         img = Image.open(BytesIO(driver.get_screenshot_as_png()))
         offset += img.size[1]
         slices.append(img)
 
-        if len(slices) > 50:
-            print('too fucking large!')
+        if len(slices) > 150:
             raise Exception('too fucking large!')
-
-        if verbose > 0:
-            driver.get_screenshot_as_file(
-                '%s/screen_%s.png' % ('/tmp', offset))
-            print(scrollheight)
 
     screenshot = Image.new('RGB', (slices[0].size[0], scrollheight))
     offset = 0
-    print(len(slices))
     for img in slices:
         screenshot.paste(img, (0, offset))
         offset += img.size[1]
 
     return screenshot
+
+
+def convert_to_jpeg(png, jpg):
+    im = Image.open(png)
+    rgb_im = im.convert('RGB')
+    os.remove(png)
+    rgb_im.save(jpg)
 
 
 @client.event
@@ -99,75 +102,82 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.content.startswith(command):
-        site = message.content[len(command) + 1:]
-        if '--full' in message.content:
-            site = message.content[len(command) + 8:]
+        print ('starting screenshot process')
+        arguments = message.content.split(' ')
+        options = deepcopy(default_options)
+        custom_options = arguments[1:-1]
+        site = arguments[-1]
+        for option in custom_options:
+            if '=' in option:
+                key, value = option.split('=')
+                options[key] = value
+            else:
+                options[option] = not options[option]
+
+        print(options)
 
         if 'http' not in site:
             site = 'http://{}'.format(site)
 
-        print('site is {}'.format(site))
-
         tmp = await client.send_message(
             message.channel, 'Screenshotting <{}>...'.format(site))
 
-        driver = configure_browser()
+        driver = configure_browser(options)
+
+        rand_str = lambda n: ''.join(
+            random.choice(
+                string.ascii_uppercase + string.digits) for _ in range(n))
+
+        filename = rand_str(5)
+        png = '{}.{}'.format(filename, 'png')
+        jpg = '{}.{}'.format(filename, 'jpg')
+
         try:
             driver.get(site)
-            print('site loaded')
 
             if 'endoftheinter.net' in site:
                 print ('site is eti')
-                login_eti(driver)
+                login_eti(driver, site)
 
-            print('sleeping')
             sleep(1)
 
-            ext = 'png'
-            filename = ''.join(
-                random.choice(
-                    string.ascii_uppercase + string.digits) for _ in range(10))
-            full_filename = '{}.{}'.format(filename, ext)
-
-            print('getting screenshot')
-            if '--full' in message.content:
+            if options['-f']:
+                print ('fullpage')
                 tmp = await client.edit_message(
                     tmp,
                     'Screenshotting <{}>... fullpage screenshots can take a '
                     'while'.format(site))
 
-                print('fullpage')
                 screenshot = fullpage(driver)
 
                 # really need to find a better way to do all this.
-                screenshot.save(full_filename)
-                im = Image.open(full_filename)
-                rgb_im = im.convert('RGB')
-                os.remove(full_filename)
-                ext = 'jpg'
-                full_filename = '{}.{}'.format(filename, ext)
-                rgb_im.save(full_filename)
+                screenshot.save(png)
             else:
-                screenshot = driver.save_screenshot(
-                    full_filename)
+                screenshot = driver.save_screenshot(png)
 
-            # filesize = os.stat(full_filename).st_size
-            # if filesize > MAX_SIZE:
-            #     print('file size too large: {}'.format(filesize))
-            #     raise Exception('file size too large')
+            convert_to_jpeg(png, jpg)
 
-            await client.edit_message(
-                tmp, 'Screenshot for <{}> grabbed!'.format(site))
-            await client.send_file(message.channel, full_filename)
+            filesize = os.stat(jpg).st_size
+            if filesize > MAX_SIZE:
+                await client.edit_message(
+                    tmp, 'File too large for {}'.format(site))
+            else:
+                await client.edit_message(
+                    tmp, 'Screenshot for <{}> grabbed!'.format(site))
+                await client.send_file(message.channel, jpg)
 
-            print ('removing file')
-            os.remove(full_filename)
+                os.remove(jpg)
 
-            print('closing browser')
-            driver.quit()
+                driver.quit()
         except:
-            print ('removing file')
-            os.remove(full_filename)
+            try:
+                os.remove(png)
+            except OSError:
+                pass
+            try:
+                os.remove(jpg)
+            except OSError:
+                pass
             await client.edit_message(
                 tmp,
                 'Failed! Could be a timeout, file too large or site is down')
