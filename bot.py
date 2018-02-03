@@ -145,9 +145,8 @@ async def on_message(message):
                     tmp, 'Screenshot for <{}> grabbed!'.format(site))
                 await client.send_file(message.channel, jpg)
 
-                os.remove(jpg)
-
-                driver.quit()
+            os.remove(jpg)
+            driver.quit()
         except:
             try:
                 os.remove(png)
