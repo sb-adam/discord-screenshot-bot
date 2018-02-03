@@ -7,6 +7,8 @@ Uses https://github.com/Rapptz/discord.py
 
 Requires installation and setup of [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/)
 
+Clone repo, run `pip install -r requirements.txt`, set token variable in `bot.py` and then run `python ./bot.py`.
+
 ## Usage
 
 Command: `!ss`
