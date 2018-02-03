@@ -11,12 +11,14 @@ Requires installation and setup of [chromedriver](https://sites.google.com/a/chr
 
 Command: `!ss`
 
-Arguments (all optional):
+#### Arguments (all optional):
 
-    * `-f` - Takes a fullpage screenshot. Turned off by default.
-    * `-w=N` - Width of brower, `N` being an integer. Default is 1024
-    * `-h=N` - Height of browser `N` being an integer. Default is 768
+ `-f` - Takes a fullpage screenshot. Turned off by default.
  
-Example
+ `-w=N` - Width of brower, `N` being an integer. Default is 1024
+ 
+ `-h=N` - Height of browser `N` being an integer. Default is 768
+ 
+#### Example
 
 `!ss -f  -w=1920 -h=1024 yahoo.com`
