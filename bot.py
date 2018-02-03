@@ -1,3 +1,5 @@
+# https://discordapp.com/api/oauth2/authorize?client_id=409259614341824513&permissions=105472&scope=bot
+
 import os
 import discord
 import asyncio
@@ -10,7 +12,7 @@ from time import sleep
 from copy import deepcopy
 
 
-token = '1234
+token = '1234'
 command = '!ss'
 
 MAX_SIZE = 1024 * 8000  # 8MB
@@ -85,7 +87,31 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.content.startswith(command):
+    if message.content == '!ss':
+        await client.send_message(
+            message.channel, """
+            ```
+# discord-screenshot-bot
+A discord bot which takes full or partial screenshots of pages then posts them.
+
+## Usage
+
+Command: !ss
+
+#### Arguments (all optional):
+
+-f - Takes a fullpage screenshot. Turned off by default.
+
+-w=N - Width of brower, `N` being an integer. Default is 1024
+
+-h=N - Height of browser `N` being an integer. Default is 768
+
+### Example
+
+!ss -f -w=1920 -h=1024 reddit.com
+            ```
+            """)
+    elif message.content.startswith(command):
         print ('starting screenshot process')
         arguments = message.content.split(' ')
         options = deepcopy(default_options)
