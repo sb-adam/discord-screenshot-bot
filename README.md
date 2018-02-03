@@ -5,8 +5,18 @@ Requires python3.5+
 
 Uses https://github.com/Rapptz/discord.py
 
-Run the bot
+Requires installation and setup of [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/)
 
 ## Usage
 
-`!ss --full url` - `--full` is optional
+Command: `!ss`
+
+Arguments (all optional):
+
+    * `-f` - Takes a fullpage screenshot. Turned off by default.
+    * `-w=N` - Width of brower, `N` being an integer. Default is 1024
+    * `-h=N` - Height of browser `N` being an integer. Default is 768
+ 
+Example
+
+`!ss -f  -w=1920 -h=1024 yahoo.com`
