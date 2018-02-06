@@ -144,7 +144,6 @@ Command: !ss
         tmp = await client.send_message(
             message.channel, 'Screenshotting <{}>...'.format(site))
 
-        driver = configure_browser(options)
 
         rand_str = lambda n: ''.join(
             random.choice(
@@ -155,6 +154,7 @@ Command: !ss
         jpg = '{}.{}'.format(filename, 'jpg')
 
         try:
+            driver = configure_browser(options)
             driver.get(site)
             sleep(1)
 
