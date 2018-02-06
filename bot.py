@@ -183,21 +183,20 @@ Command: !ss
                     tmp, 'Screenshot for <{}> grabbed!'.format(site))
                 await client.send_file(message.channel, jpg)
 
-            os.remove(jpg)
-            driver.quit()
         except:
-            try:
-                os.remove(png)
-            except OSError:
-                pass
-            try:
-                os.remove(jpg)
-            except OSError:
-                pass
-            driver.quit()
             await client.edit_message(
                 tmp,
                 'Failed! Could be a timeout, file too large or site is down')
+        try:
+            os.remove(png)
+        except OSError:
+            pass
+        try:
+            os.remove(jpg)
+        except OSError:
+            pass
+        driver.quit()
+
     elif processes > MAX_PROCESSES:
         await client.send_message(message.channel, 'Too many processes running, try again later.')
 
