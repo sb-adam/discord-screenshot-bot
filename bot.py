@@ -129,11 +129,12 @@ Command: !ss
         custom_options = arguments[1:-1]
         site = arguments[-1]
         for option in custom_options:
-            if '=' in option:
-                key, value = option.split('=')
-                options[key] = value
-            else:
-                options[option] = not options[option]
+            if option in options:
+                if '=' in option:
+                    key, value = option.split('=')
+                    options[key] = value
+                else:
+                    options[option] = not options[option]
 
         print(options)
 
