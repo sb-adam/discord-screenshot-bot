@@ -16,6 +16,9 @@ token = '1234'
 command = '!ss'
 
 MAX_SIZE = 1024 * 8000  # 8MB
+MAX_PROCESSES = 4
+
+processes = 0
 
 client = discord.Client()
 
@@ -77,6 +80,12 @@ def convert_to_jpeg(png, jpg):
     rgb_im.save(jpg)
 
 
+def set_processes(content, value):
+    global processes
+    if content.startswith('!ss'):
+        processes = value
+
+
 @client.event
 async def on_ready():
     print('Logged in as')
@@ -87,6 +96,8 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    global processes
+    set_processes(message.content, processes + 1)
     if message.content == '!ss':
         await client.send_message(
             message.channel, """
@@ -111,7 +122,7 @@ Command: !ss
 !ss -f -w=1920 -h=1024 reddit.com
             ```
             """)
-    elif message.content.startswith(command):
+    elif message.content.startswith(command) and processes <= MAX_PROCESSES:
         print ('starting screenshot process')
         arguments = message.content.split(' ')
         options = deepcopy(default_options)
@@ -182,9 +193,14 @@ Command: !ss
                 os.remove(jpg)
             except OSError:
                 pass
+            driver.quit()
             await client.edit_message(
                 tmp,
                 'Failed! Could be a timeout, file too large or site is down')
+    elif processes > MAX_PROCESSES:
+        await client.send_message(message.channel, 'Too many processes running, try again later.')
+
+    set_processes(message.content, processes - 1)
 
 
 client.run(token)
