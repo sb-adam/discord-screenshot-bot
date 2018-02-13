@@ -10,6 +10,7 @@ Requires installation and setup of [chromedriver](https://sites.google.com/a/chr
 Clone repo, run `pip install -r requirements.txt`, set token variable in `bot.py` and then run `python ./bot.py`.
 
 Public invite link: https://discordapp.com/api/oauth2/authorize?client_id=409259614341824513&permissions=105472&scope=bot
+Support server: https://discord.gg/mmg7fsT
 
 ## Usage
 
