@@ -152,9 +152,9 @@ Command: !ss
         filename = rand_str(5)
         png = '{}.{}'.format(filename, 'png')
         jpg = '{}.{}'.format(filename, 'jpg')
-
+        
+        driver = configure_browser(options)
         try:
-            driver = configure_browser(options)
             driver.get(site)
             sleep(1)
 
